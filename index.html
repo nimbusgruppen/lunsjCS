@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lunch Break Scheduler</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* CSS to position the reset button */
+        #reset-button {
+            position: absolute; /* Use absolute positioning */
+            top: 20px; /* Adjust the top position */
+            right: 20px; /* Adjust the right position */
+            padding: 10px 15px; /* Add some padding */
+            background-color: #f44336; /* Red background */
+            color: white; /* White text */
+            border: none; /* No border */
+            border-radius: 5px; /* Rounded corners */
+            cursor: pointer; /* Change cursor on hover */
+            font-size: 10px; /* Font size */
+        }
+
+        /* Optional: Style for the button on hover */
+        #reset-button:hover {
+            background-color: #d32f2f; /* Darker red on hover */
+        }
+
+        /* Optional: Adjust the main container to add some padding */
+        body {
+            position: relative; /* Required for absolute positioning of the button */
+            padding: 20px; /* Add padding around the body */
+        }
+    </style>
+</head>
+<body>
+    <button id="reset-button">Reset alle plasser</button>
+    <h1>LUNSJBOOKING</h1>
+    <div id="schedule-container"></div>
+
+
+
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+
+
+        // Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAQAt7hrhHweaQvcxJKATSomS2fUoIHh-k",
+  authDomain: "lunsj-52179.firebaseapp.com",
+  projectId: "lunsj-52179",
+  storageBucket: "lunsj-52179.appspot.com",
+  messagingSenderId: "832976992646",
+  appId: "1:832976992646:web:9c007f82b15267d75bd407",
+  measurementId: "G-BG6VPSNHE4"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+// Function to initialize time slots in Firestore (revised version)
+function initializeTimeSlots() {
+    const lunchTimes = ['11:00 - 11:30', '11:30 - 12:00', '12:00 - 12:30', '12:30 - 13:00'];
+    
+    lunchTimes.forEach(time => {
+        for (let i = 1; i <= 4; i++) {
+            const slotId = `${time}-${i}`; // Unique ID for each slot
+            const slotDocRef = doc(db, 'lunchSlots', slotId); // Correctly reference the Firestore document
+
+            setDoc(slotDocRef, {
+                booked: false // Set to false initially
+            }, { merge: true }) // Merge to avoid overwriting existing data
+            .then(() => {
+                console.log(`Slot ${slotId} successfully initialized.`);
+            })
+            .catch((error) => {
+                console.error(`Error initializing slot ${slotId}: `, error);
+            });
+        }
+    });
+}
+
+
+// Call this function once to initialize time slots
+// initializeTimeSlots();
+
+      // Function to display available lunch slots in vertical columns
+function displayLunchSlots() {
+    const scheduleContainer = document.getElementById('schedule-container');
+    scheduleContainer.innerHTML = ''; // Clear any existing content
+
+    const lunchTimes = ['11:00 - 11:30', '11:30 - 12:00', '12:00 - 12:30', '12:30 - 13:00'];
+    
+    lunchTimes.forEach(time => {
+        const timeColumn = document.createElement('div'); // Container for each time slot column
+        timeColumn.classList.add('time-column'); // Add a CSS class to style the column
+
+        const timeLabel = document.createElement('h3'); // Label for the time interval
+        timeLabel.textContent = time;
+        timeColumn.appendChild(timeLabel);
+
+        for (let i = 1; i <= 4; i++) { // Loop to create 4 slots for each time interval
+            const slotId = `${time}-${i}`;
+            const slotButton = document.createElement('button');
+            slotButton.textContent = `Plass ${i}`; // Default label for each slot
+            slotButton.classList.add('time-slot');
+            slotButton.onclick = () => bookLunchSlot(slotId); // Book the specific slot
+
+            // Function to book a lunch slot
+function bookLunchSlot(slotId) {
+    const userName = prompt("Navn"); // Prompt the user for their name
+    if (userName) { // If the user enters a name, proceed with the booking
+        const slotDocRef = doc(db, 'lunchSlots', slotId);
+        setDoc(slotDocRef, { booked: true, name: userName })
+            .then(() => {
+                alert(`Reservert for ${userName}!`);
+                displayLunchSlots(); // Refresh the display to show the updated status
+            })
+            .catch((error) => {
+                console.error("Error booking slot: ", error);
+            });
+    } else {
+        alert("Du må taste inn navn for å reservere plassen");
+    }
+}
+
+
+            // Check Firestore to see if the slot is already booked
+            const slotDocRef = doc(db, 'lunchSlots', slotId);
+            getDoc(slotDocRef).then(docSnapshot => {
+                if (docSnapshot.exists() && docSnapshot.data().booked) {
+                    const bookedName = docSnapshot.data().name || 'Unknown'; // Retrieve the name of the person who booked the slot
+                    slotButton.disabled = true;
+                    slotButton.textContent = `${bookedName} (Booked)`;
+                }
+            }).catch((error) => {
+                console.error("Error fetching slot data: ", error);
+            });
+
+            timeColumn.appendChild(slotButton); // Add each slot button to its column
+        }
+
+        scheduleContainer.appendChild(timeColumn); // Add the column to the main container
+    });
+}
+
+
+
+        // Function to book a lunch slot
+        function bookLunchSlot(time) {
+            const slotDocRef = doc(db, 'lunchSlots', time);
+            setDoc(slotDocRef, { booked: true }, { merge: true }).then(() => {
+                alert(`Lunch slot ${time} successfully booked!`);
+                window.location.reload(); // Refresh the page to update slot availability
+            }).catch(error => {
+                console.error("Error booking lunch slot: ", error);
+                alert('Kunne ikke reserveres. Prøv igjen.');
+            });
+        }
+
+        // Display the lunch slots when the page loads
+        window.onload = displayLunchSlots;
+
+        // Function to reset all lunch slots
+function resetLunchSlots() {
+    const password = prompt("Tast inn passord for å resette alle plasser");
+    const correctPassword = "Undulat00!"; // Set your desired password here
+
+    if (password === correctPassword) {
+        const lunchSlotsRef = collection(db, 'lunchSlots');
+        getDocs(lunchSlotsRef).then((snapshot) => {
+            const batch = writeBatch(db); // Create a batch for efficient updates
+
+            snapshot.forEach(doc => {
+                const slotId = doc.id;
+                batch.set(doc.ref, { booked: false, name: '' }); // Reset the slot
+            });
+
+            return batch.commit(); // Commit the batch operation
+        }).then(() => {
+            alert("Alle plasser er åpnet.");
+            displayLunchSlots(); // Refresh the display to show the updated status
+        }).catch((error) => {
+            console.error("Error resetting slots: ", error);
+        });
+    } else {
+        alert("Feil passord. Prøv igjen.");
+    }
+}
+
+// Add event listener to the reset button
+document.getElementById('reset-button').addEventListener('click', resetLunchSlots);
+
+    </script>
+
+    <!-- Your app.js file -->
+    <script src="app.js" defer></script>
+</body>
+</html>

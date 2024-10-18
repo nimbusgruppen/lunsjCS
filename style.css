@@ -1,0 +1,53 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f0f0f0;
+}
+
+h2 {
+    margin-bottom: 20px;
+}
+
+#timeSlots {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.time-slot {
+    padding: 15px;
+    background-color: #e0e0e0;
+    border: 1px solid #ccc;
+    text-align: center;
+    cursor: pointer;
+}
+
+.time-slot.booked {
+    background-color: #d3d3d3;
+    cursor: not-allowed;
+}
+
+/* Styling for the time slot buttons */
+.time-slot {
+    padding: 10px 20px;
+    margin: 5px;
+    background-color: #478d7c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+ /* Change the button color on hover */
+ .time-slot:hover:not(:disabled) {
+    background-color: #1c4435;
+}
+
+/* Disabled slot button styling */
+.time-slot:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
